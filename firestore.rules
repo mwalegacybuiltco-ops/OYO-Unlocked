@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+  function reviewer() { return request.auth != null && request.auth.token.owner == true && get(/databases/$(database)/documents/privateConfig/owner).data.uid == request.auth.uid; }
+  // Progress, XP, reviews, roles, and entitlements are server-authoritative.
+  match /players/{uid} {
+   allow read: if owner(uid);
+   allow write: if false;
+   match /proofs/{proofId} {
+    allow read: if owner(uid) || reviewer();
+    allow write: if false;
+   }
+  }
+  match /entitlements/{uid} { allow read: if owner(uid); allow write: if false; }
+  match /gamerChat/{messageId} { allow read: if request.auth != null; allow write: if false; }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

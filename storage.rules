@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+ match /b/{bucket}/o {
+  function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+  function reviewer() { return request.auth != null && request.auth.token.owner == true && firestore.get(/databases/(default)/documents/privateConfig/owner).data.uid == request.auth.uid; }
+  match /proofs/{uid}/{proofId}/evidence {
+   allow read: if owner(uid) || reviewer();
+   // Create-only objects prevent replacing evidence after its review.
+   allow create: if owner(uid) && request.resource.size <= 5 * 1024 * 1024
+    && request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
+   allow update, delete: if false;
+  }
+  match /{allPaths=**} { allow read, write: if false; }
+ }
+}
