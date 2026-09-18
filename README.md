@@ -1,6 +1,6 @@
 # OYO: UNLOCKED — Firebase + Community edition
 
-This edition uses Firebase accounts and server-saved progress. It restores in-game community chat and keeps all nine worlds, 18 missions, expanded training, owner admin, LWA links, and Compass AI integration. It has not been deployed. Device-only gameplay is disabled; existing offline saves are not imported into trusted Firebase progress.
+This edition uses Firebase accounts and server-saved progress. It restores in-game community chat and keeps all nine worlds, 18 missions, expanded training, owner admin, LWA links, and built-in adaptive coaching. It has not been deployed. Device-only gameplay is disabled; existing offline saves are not imported into trusted Firebase progress.
 
 ## Community
 
@@ -10,26 +10,13 @@ Signed-in players share a realtime room with the latest 100 messages. Messages a
 
 Enable Email/Password authentication and configure authorized domains and password-reset email templates in Firebase. Character & settings includes sign-up, sign-in, and Forgot your password. Reset links use Firebase’s secure email flow. There is no hidden account bypass.
 
-## Optional online services
+## Adaptive Guides and Bosses
 
-- In Online account mode, accounts, player state, missions, evidence, XP, and unlocks use Firebase.
-- Online proof requires your registered owner review; players cannot approve their own evidence.
-- Guides and boss assessments use the same architecture found in the user's OYO Compass project: Firebase callable Functions, the `OPENAI_API_KEY` Secret Manager secret, the `OPENAI_MODEL` parameter (existing default `gpt-5`), and the Responses API.
-- Guide context includes the player's business, verified work, Guide level, and recent conversation. Bosses use a structured three-part assessment, with all criteria required to pass.
-- A provider outage, missing secret, refusal, incomplete response, or malformed assessment grants no rewards.
-- No new provider or replacement model was selected. The transport uses the standard HTTP endpoint of the same API used by Compass.
+No OpenAI or other external AI service is connected. Firebase Functions run the built-in coaching engine in functions/game/coaching.js. Six Guides store separate planning answers in the player record, ask follow-up questions, route closing concerns, and introduce comparison and evidence exercises at higher Guide levels. They use the business profile, current mission, verified count, and recorded review feedback. They do not freely interpret arbitrary language; structured options clarify ambiguous concerns.
 
-The original Compass source was found in the user's separate July 15 workspace after the first delivery. Its saved `useLiveAICoach` flag was false; finding the implementation does not prove that its secret or callable is deployed.
+Bosses have 27 scenarios across nine worlds. Later rounds add constraints and failed attempts revisit unresolved concerns. Two strategy selections are assessed by a server rubric; the written application is saved but is not semantically graded. Proof reviews remain owner-only. Conversation alone awards no XP. Existing players need no reset; coaching memory is created on first use.
 
-## Online launch requirements
-
-1. A confirmed Firebase destination for this app and a signed-in Firebase CLI.
-2. Auth, Firestore, Storage, Functions, and Hosting enabled for that destination.
-3. The existing Compass API credential stored as `OPENAI_API_KEY` in that project's Secret Manager.
-4. Your sole owner account registered with the supplied trusted setup utility.
-5. A tested deployment, including actual account creation, evidence review, a Guide reply, and a boss round.
-
-**Do not deploy these standalone rules or hosting files over an existing Compass project without planning a separate Hosting site and merging database/storage rules.** The safe default is a separate Firebase project for UNLOCKED. The same AI architecture can be used there with the appropriate secret. No existing app has been overwritten.
+Firebase configuration, a billing-enabled project, deployed rules/functions, and your registered owner account are still required. No AI secret or model configuration is needed. Do not overwrite another app’s rules or Hosting deployment.
 
 ## Quick visual preview
 
@@ -67,13 +54,10 @@ firebase login
 cp .firebaserc.example .firebaserc
 # Replace the project placeholder in .firebaserc with the confirmed project ID.
 cp functions/.env.example functions/.env.YOUR_PROJECT_ID
-firebase functions:secrets:set OPENAI_API_KEY
-# Enter the existing Compass API key only into Firebase's secure terminal prompt.
 pnpm build
 firebase deploy --only firestore:rules,firestore:indexes,storage,functions,hosting
 ```
 
-The Guide and battle functions explicitly bind `OPENAI_API_KEY`. The default model matches Compass; configure `OPENAI_MODEL` in the Functions environment if your actual Compass deployment uses a different value. Never paste a key into chat, GitHub, or client code. Do not copy a service-account file into this repository.
 
 After deployment, set Auth authorised domains for the actual Hosting URL. Configure private Storage downloads with `storage.cors.example.json`, replacing its origin with the actual app origin:
 
@@ -179,7 +163,7 @@ pnpm test:rules
 
 The live-only build and automated tests are recorded in [VERIFICATION.md](docs/VERIFICATION.md). Browser inspection was previously declined; no browser workaround is used. Actual Firebase and AI calls cannot be confirmed until project access and deployment are available.
 
-Implementation: `src/` for the game; `functions/game/` for the curriculum/state machine; `functions/index.js` for trusted cloud actions; `functions/adapters/compass.js` for the live Compass integration. See [AI-INTEGRATION.md](docs/AI-INTEGRATION.md) and [ASSETS.md](docs/ASSETS.md).
+Implementation: `src/` for the game; `functions/game/` for the curriculum/state machine; `functions/index.js` for trusted cloud actions; `functions/game/coaching.js` for the adaptive coaching rules. See [AI-INTEGRATION.md](docs/AI-INTEGRATION.md) and [ASSETS.md](docs/ASSETS.md).
 
 Community chat is built into this edition.
 
